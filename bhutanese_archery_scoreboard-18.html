@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bhutanese Archery Scoreboard</title>
+<style>
+:root{
+  --bg:#0d1722; --panel:#172638; --panel2:#1d3045; --line:#2c435b;
+  --text:#f4f7fa; --muted:#9eb0c2; --accent:#62d6b0; --one:#f1c75b; --two:#ef6461;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#09131e,#122235 55%,#0c1825);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input{font:inherit}
+.app{max-width:1250px;margin:auto;padding:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.brand{font-size:clamp(23px,4vw,34px);font-weight:800;letter-spacing:-.5px}
+.subtitle{color:var(--muted);font-size:14px;margin-top:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+button{border:0;color:var(--text);background:#243a50;border-radius:12px;padding:11px 15px;font-weight:700;cursor:pointer}
+button:hover{filter:brightness(1.12)}
+.primary{background:var(--accent);color:#082016}
+.danger{background:#552d35}
+.card{background:rgba(23,38,56,.94);border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.2);overflow:hidden}
+.setup{padding:16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-bottom:14px}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+input{width:100%;background:#0f1d2b;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px 13px;outline:none}
+input:focus{border-color:var(--accent)}
+.player-add{display:flex;gap:8px}
+.player-add input{min-width:220px}
+.roundbar{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:thin}
+.roundbar button{min-width:58px;padding:12px 8px;background:#24384e;color:#c9d6e2;font-size:15px}
+.roundbar button.active{background:#eef3f6;color:#182532}
+.roundbar button.done{box-shadow:inset 0 -3px 0 var(--accent)}
+.round-title{padding:17px 18px 9px;display:flex;align-items:end;justify-content:space-between;gap:12px}
+.round-title h2{margin:0;font-size:clamp(25px,5vw,36px)}
+.round-title span{color:var(--muted);font-size:14px}
+.table-wrap{overflow:auto;padding:0 12px 15px}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:700px}
+th,td{border-bottom:1px solid #294057}
+th{color:var(--muted);font-size:14px;text-align:left;padding:12px 10px;position:sticky;top:0;background:#172638;z-index:2}
+td{padding:12px 9px}
+.player-name{font-weight:750;font-size:17px;white-space:nowrap}
+.hit-total{font-size:14px;color:var(--muted);white-space:nowrap}
+.score-buttons{display:flex;gap:7px}
+.score-buttons button{height:52px;min-width:62px;font-size:20px;padding:0;background:#253b51;border:1px solid #38516a}
+.score-buttons button.selected.one{background:var(--one);color:#2b2209;border-color:#ffe28a}
+.score-buttons button.selected.two{background:var(--two);color:#fff;border-color:#ff9693}
+.score-buttons button.selected.zero{background:#42576a;color:#fff}
+.remove{background:transparent;color:#8397a9;padding:8px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.stat{background:#101e2c;border:1px solid var(--line);border-radius:14px;padding:13px}
+.stat b{display:block;font-size:22px;margin-top:2px}
+.stat small{color:var(--muted)}
+.finish{margin-top:14px;padding:15px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.finish h3{margin:0 0 3px}
+.finish p{margin:0;color:var(--muted);font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(2,8,14,.78);display:none;align-items:center;justify-content:center;padding:15px;z-index:20}
+.modal.show{display:flex}
+.sheet{width:min(1050px,100%);max-height:92vh;overflow:auto;background:#172638;color:#f4f7fa;border:1px solid #2c435b;border-radius:18px;padding:18px}
+.sheet h1{margin:0;text-align:left;font-size:26px;font-weight:800}
+.sheet .meta{text-align:left;color:#9eb0c2;margin:4px 0 14px}
+.sheet table{min-width:850px;width:100%;color:#f4f7fa;border-collapse:collapse}
+.sheet th,.sheet td{background:#172638;color:#f4f7fa;border-color:#2c435b;padding:11px 9px}
+.sheet th{position:static;text-align:center;font-size:13px;color:#9eb0c2}
+.sheet th:first-child,.sheet td:first-child{text-align:left}
+.sheet .winner{font-weight:900}
+.sheet .winner td:nth-child(3){color:#ef6461;font-size:20px}
+.sheet-actions{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px}
+.note{font-size:12px;color:#65727b;text-align:center;margin-top:12px}
+@media(max-width:700px){
+ .app{padding:10px}.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}
+ .setup{grid-template-columns:1fr}.player-add input{min-width:0}
+ .summary{grid-template-columns:1fr}
+ .score-buttons button{min-width:70px;height:58px}
+}
+@media print{
+ body{background:white}.modal{position:static;display:block!important;background:white;padding:0}.sheet{max-height:none;box-shadow:none;width:100%;border-radius:0}
+ .sheet-actions{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <div class="brand">🏹 Bhutanese Archery Scorecard</div>
+      <div class="subtitle">25 rounds • up to 2 hits per round • no points system</div>
+    </div>
+    <div class="actions">
+      <button onclick="undoLast()">↶ Undo</button>
+      <button onclick="saveNow()">Save</button>
+      <button onclick="newMatch()" class="danger">New match</button>
+    </div>
+  </div>
+
+  <div class="card setup">
+    <div>
+      <label>Match / Event name</label>
+      <input id="matchName" placeholder="e.g. Tshedrup vs Friends" oninput="save()">
+    </div>
+    <div class="player-add">
+      <input id="playerName" placeholder="Player name">
+      <button class="primary" onclick="addPlayer()">Add player</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="roundbar" id="roundbar"></div>
+    <div class="round-title">
+      <div><h2 id="roundTitle">Round 1</h2><span id="roundSub">Choose 0, 1 or 2 hits for each archer.</span></div>
+      <div class="actions">
+        <button onclick="prevRound()">‹ Previous</button>
+        <button onclick="nextRound()">Next ›</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Archer</th><th>This round</th><th>Recorded hits</th><th></th></tr></thead>
+        <tbody id="scoreRows"></tbody>
+      </table>
+      <div id="empty" class="empty" style="display:none">Add players above to start recording the match.</div>
+    </div>
+    <div style="padding:0 14px 4px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="color:#9eb0c2;font-size:13px">— = 0 hits &nbsp; • &nbsp; 1 = one hit &nbsp; • &nbsp; 2 = two hits</span>
+      <button onclick="clearRound()">Clear this round</button>
+    </div>
+    <div class="summary">
+      <div class="stat"><small>Rounds recorded</small><b id="roundStat">0 / 25</b></div>
+      <div class="stat"><small>Total hits — all rounds</small><b id="hitStat">0</b></div>
+      <div class="stat"><small>Current round</small><b id="currentStat">—</b></div>
+    </div>
+  </div>
+
+  <div class="card finish">
+    <div><h3>End of match</h3><p>Open the final sheet to see each archer's recorded hits and the highest total.</p></div>
+    <button class="primary" onclick="openSheet()">Take out winning sheet</button>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="sheet-actions">
+      <button onclick="window.print()">Print / Save PDF</button>
+      <button onclick="closeSheet()">Close</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:2px">
+      <div>
+        <div style="font-size:13px;color:#9eb0c2">TRADITIONAL BHUTANESE ARCHERY</div>
+        <h1>Full Score Card</h1>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:#62d6b0">25 ROUNDS</div>
+    </div>
+    <div class="meta" id="sheetMeta"></div>
+    <div class="table-wrap" style="padding:0">
+      <table id="fullCardTable">
+        <thead id="sheetHead"></thead>
+        <tbody id="sheetRows"></tbody>
+      </table>
+    </div>
+    <div class="note">Each box records the number of hits in that round: —, 1 or 2. The final column is the total number of hits, not points.</div>
+  </div>
+</div>
+
+<script>
+const KEY='bhutaneseArcheryScorecard_v1';
+let state={matchName:'',players:[],rounds:Array.from({length:25},()=>[]),currentRound:0};
+let historyStack=[];
+
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY));
+    if(s && Array.isArray(s.players) && Array.isArray(s.rounds)){
+      state=s; state.rounds.length=25;
+      while(state.rounds.length<25)state.rounds.push([]);
+    }
+  }catch(e){}
+  document.getElementById('matchName').value=state.matchName||'';
+  render();
+}
+function save(){state.matchName=document.getElementById('matchName').value;localStorage.setItem(KEY,JSON.stringify(state));}
+function saveNow(){save();alert('Match saved on this device. Reopening this HTML file in the same browser will keep the saved match.');}
+function newMatch(){
+  if(!confirm('Start a new match? The current saved match will be cleared.'))return;
+  state={matchName:'',players:[],rounds:Array.from({length:25},()=>[]),currentRound:0};
+  localStorage.removeItem(KEY);document.getElementById('matchName').value='';render();
+}
+function addPlayer(){
+  const el=document.getElementById('playerName'),name=el.value.trim();
+  if(!name)return;
+  snapshot();
+  state.players.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name});
+  state.rounds.forEach(r=>r.push(null)); el.value='';save();render();
+}
+function removePlayer(id){
+  if(!confirm('Remove this archer from the match?'))return;
+  snapshot();
+  state.players=state.players.filter(p=>p.id!==id);
+  state.rounds.forEach(r=>{let i=r.findIndex(x=>x&&x.id===id);if(i>=0)r.splice(i,1)});
+  save();render();
+}
+function getVal(roundIndex,id){
+  const item=(state.rounds[roundIndex]||[]).find(x=>x&&x.id===id);
+  return item?item.hits:null;
+}
+function snapshot(){historyStack.push(JSON.stringify(state));if(historyStack.length>30)historyStack.shift()}
+function undoLast(){
+  if(!historyStack.length){alert('Nothing to undo.');return}
+  state=JSON.parse(historyStack.pop());
+  document.getElementById('matchName').value=state.matchName||'';
+  save();render();
+}
+function prevRound(){if(state.currentRound>0){state.currentRound--;save();render()}}
+function nextRound(){if(state.currentRound<24){state.currentRound++;save();render()}}
+function clearRound(){
+  if(!state.players.length)return;
+  if(!confirm('Clear all scores for Round '+(state.currentRound+1)+'?'))return;
+  snapshot();state.rounds[state.currentRound]=[];save();render();
+}
+function setScore(id,hits){
+  snapshot();
+  let r=state.rounds[state.currentRound];
+  let item=r.find(x=>x&&x.id===id);
+  if(!item){item={id,hits};r.push(item)}else item.hits=hits;
+  save();render();
+}
+function roundDone(i){return state.players.length>0 && state.players.every(p=>getVal(i,p.id)!==null)}
+function completedRounds(){let n=0;for(let i=0;i<25;i++)if(roundDone(i))n++;return n}
+function totalHits(id){let n=0;for(let r of state.rounds){const x=r.find(y=>y&&y.id===id);if(x)n+=Number(x.hits)||0}return n}
+function render(){
+  const rb=document.getElementById('roundbar');rb.innerHTML='';
+  for(let i=0;i<25;i++){
+    const b=document.createElement('button');b.textContent=i+1;
+    if(i===state.currentRound)b.classList.add('active');
+    if(roundDone(i))b.classList.add('done');
+    b.onclick=()=>{state.currentRound=i;render()};
+    rb.appendChild(b);
+  }
+  document.getElementById('roundTitle').textContent=`Round ${state.currentRound+1}`;
+  document.getElementById('roundSub').textContent=`Round ${state.currentRound+1} of 25 • record up to 2 hits`;
+  const tbody=document.getElementById('scoreRows');tbody.innerHTML='';
+  document.getElementById('empty').style.display=state.players.length?'none':'block';
+  state.players.forEach(p=>{
+    const v=getVal(state.currentRound,p.id);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div class="player-name">${esc(p.name)}</div></td>
+      <td><div class="score-buttons">
+        <button class="${v===0?'selected zero':''}" onclick="setScore('${p.id}',0)">—</button>
+        <button class="${v===1?'selected one':''}" onclick="setScore('${p.id}',1)">1</button>
+        <button class="${v===2?'selected two':''}" onclick="setScore('${p.id}',2)">2</button>
+      </div></td>
+      <td class="hit-total">${totalHits(p.id)} hits</td>
+      <td><button class="remove" onclick="removePlayer('${p.id}')">Remove</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('roundStat').textContent=`${completedRounds()} / 25`;
+  document.getElementById('hitStat').textContent=state.players.reduce((a,p)=>a+totalHits(p.id),0);
+  document.getElementById('currentStat').textContent=state.players.length?`${state.players.length} archers`:'—';
+}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function openSheet(){
+  const ranked=state.players.map(p=>({p,h:totalHits(p.id),r:state.rounds.filter(x=>getVal(state.rounds.indexOf(x),p.id)!==null).length}))
+    .sort((a,b)=>b.h-a.h||a.p.name.localeCompare(b.p.name));
+  document.getElementById('sheetMeta').textContent=(state.matchName||'Archery Match')+' • '+completedRounds()+' / 25 rounds fully recorded';
+  const head=document.getElementById('sheetHead');
+  head.innerHTML='<tr><th>Name</th>'+Array.from({length:25},(_,i)=>`<th>${i+1}</th>`).join('')+'<th>Total</th></tr>';
+  const tb=document.getElementById('sheetRows');tb.innerHTML='';
+  ranked.forEach((x,i)=>{
+    const vals=Array.from({length:25},(_,ri)=>{
+      const v=getVal(ri,x.p.id);
+      return v===null?'—':v;
+    });
+    const tr=document.createElement('tr');tr.className=i===0?'winner':'';
+    tr.innerHTML=`<td>${esc(x.p.name)}</td>`+
+      vals.map(v=>`<td style="text-align:center;font-weight:700">${v}</td>`).join('')+
+      `<td style="text-align:center;font-weight:900">${x.h}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('modal').classList.add('show');
+}
+function closeSheet(){document.getElementById('modal').classList.remove('show')}
+load();
+</script>
+</body>
+</html>
